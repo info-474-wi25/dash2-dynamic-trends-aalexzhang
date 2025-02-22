@@ -22,8 +22,34 @@ const svg2_RENAME = d3.select("#lineChart2")
 // const tooltip = ...
 
 // 2.a: LOAD...
-d3.csv("YOUR_CSV_NAME.csv").then(data => {
+d3.csv("weather.csv").then(data => {
     // 2.b: ... AND TRANSFORM DATA
+
+    //Create a transformed dataset with a column for actual_min_temp and actual_max_temp
+    let transformedData = [];
+    data.forEach(d => {
+        d.date = new Date(d.date);
+        d.actual_min_temp = +d.actual_min_temp;
+        d.actual_max_temp = +d.actual_max_temp;
+
+        transformedData.push({
+            date: d.date,
+            temp: d.actual_min_temp,
+            type: "min",
+            city: d.city
+        });
+
+        transformedData.push({
+            date: d.date,
+            temp: d.actual_max_temp,
+            type: "max",
+            city: d.city
+        });
+    });
+
+    console.log(transformedData);
+    console.log(data);
+    
 
     // 3.a: SET SCALES FOR CHART 1
 
