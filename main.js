@@ -1,5 +1,5 @@
 // 1: SET GLOBAL VARIABLES
-const margin = { top: 50, right: 30, bottom: 60, left: 70 };
+const margin = { top: 50, right: 150, bottom: 60, left: 70 };
 const width = 900 - margin.left - margin.right;
 const height = 400 - margin.top - margin.bottom;
 
@@ -21,68 +21,108 @@ const svg2_RENAME = d3.select("#lineChart2")
 // (If applicable) Tooltip element for interactivity
 // const tooltip = ...
 
-// 2.a: LOAD...
 d3.csv("weather.csv").then(data => {
-    // 2.b: ... AND TRANSFORM DATA
-
-    //Create a transformed dataset with a column for actual_min_temp and actual_max_temp
+    // Transform the data
     let transformedData = [];
     data.forEach(d => {
         d.date = new Date(d.date);
-        d.actual_min_temp = +d.actual_min_temp;
-        d.actual_max_temp = +d.actual_max_temp;
+        d.average_min_temp = +d.average_min_temp;
+        d.average_max_temp = +d.average_max_temp;
 
+        // Add min temp entry
         transformedData.push({
             date: d.date,
-            temp: d.actual_min_temp,
+            temp: d.average_min_temp,
             type: "min",
             city: d.city
         });
 
+        // Add max temp entry
         transformedData.push({
             date: d.date,
-            temp: d.actual_max_temp,
+            temp: d.average_max_temp,
             type: "max",
             city: d.city
         });
     });
 
-    console.log(transformedData);
-    console.log(data);
+    // Filter the data to include only max and min temperatures
+    let maxTempData = transformedData.filter(d => d.type === "max");
+    let minTempData = transformedData.filter(d => d.type === "min");
+
+    // Group the data by city
+    let maxDataByCity = d3.group(maxTempData, d => d.city);
+    let minDataByCity = d3.group(minTempData, d => d.city);
+
+    // Set up scales
+    const xScale = d3.scaleTime()
+        .domain(d3.extent(transformedData, d => d.date))
+        .range([0, width]);
+
+    const yScale = d3.scaleLinear()
+        .domain([0, d3.max(transformedData, d => d.temp)])
+        .range([height, 0]);
+
+    // Create a color scale
+    const colorScale = d3.scaleOrdinal(d3.schemeCategory10)
+        .domain(Array.from(maxDataByCity.keys()));
+
+    // Create line generator
+    const line = d3.line()
+        .x(d => xScale(d.date))
+        .y(d => yScale(d.temp));
+
+    maxDataByCity.forEach((values, city) => {
+        svg1_RENAME.append("path")
+            .datum(values)
+            .attr("fill", "none")
+            .attr("stroke", colorScale(city))
+            .attr("stroke-width", 1.5)
+            .attr("d", line)
+            .attr("class", "line max-temp")
+            .attr("data-legend", city + " max");
+    });
+
+    minDataByCity.forEach((values, city) => {
+        svg1_RENAME.append("path")
+            .datum(values)
+            .attr("fill", "none")
+            .attr("stroke", colorScale(city))
+            .attr("stroke-width", 1.5)
+            .attr("stroke-dasharray", "5,5")
+            .attr("d", line)
+            .attr("class", "line min-temp")
+            .attr("data-legend", city + " min");
+    });
+
+    // Add x-axis
+    svg1_RENAME.append("g")
+        .attr("transform", `translate(0,${height})`)
+        .call(d3.axisBottom(xScale));
+
+    // Add y-axis
+    svg1_RENAME.append("g")
+        .call(d3.axisLeft(yScale));
+
+    const legend = svg1_RENAME.selectAll(".legend")
+        .data(Array.from(maxDataByCity.keys()))
+        .enter()
+        .append("g")
+        .attr("class", "legend")
+        .attr("transform", (d, i) => `translate(${width - 150}, ${i * 20 - 30})`);
+
+    const legendItems = Array.from(maxDataByCity.keys());
+
+    console.log(legendItems)
+
+    legend.append("rect")
+        .attr("x", 160)
+        .attr("width", 10)
+        .attr("height", 10)
+        .attr("fill", d => colorScale(d));
     
-
-    // 3.a: SET SCALES FOR CHART 1
-
-
-    // 4.a: PLOT DATA FOR CHART 1
-
-
-    // 5.a: ADD AXES FOR CHART 1
-
-
-    // 6.a: ADD LABELS FOR CHART 1
-
-
-    // 7.a: ADD INTERACTIVITY FOR CHART 1
-    
-
-    // ==========================================
-    //         CHART 2 (if applicable)
-    // ==========================================
-
-    // 3.b: SET SCALES FOR CHART 2
-
-
-    // 4.b: PLOT DATA FOR CHART 2
-
-
-    // 5.b: ADD AXES FOR CHART 
-
-
-    // 6.b: ADD LABELS FOR CHART 2
-
-
-    // 7.b: ADD INTERACTIVITY FOR CHART 2
-
-
+    legend.append("text")
+        .attr("x", 180)
+        .attr("y", 10)
+        .text(d => d);
 });
