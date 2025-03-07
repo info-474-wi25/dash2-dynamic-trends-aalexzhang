@@ -72,28 +72,25 @@ d3.csv("weather.csv").then(data => {
         .x(d => xScale(d.date))
         .y(d => yScale(d.temp));
 
-    maxDataByCity.forEach((values, city) => {
-        svg1_RENAME.append("path")
-            .datum(values)
-            .attr("fill", "none")
-            .attr("stroke", colorScale(city))
-            .attr("stroke-width", 1.5)
-            .attr("d", line)
-            .attr("class", "line max-temp")
-            .attr("data-legend", city + " max");
-    });
+    function updateChart(tempType) {
+        const dataByCity = tempType === "max" ? maxDataByCity : minDataByCity;
 
-    minDataByCity.forEach((values, city) => {
-        svg1_RENAME.append("path")
-            .datum(values)
-            .attr("fill", "none")
-            .attr("stroke", colorScale(city))
-            .attr("stroke-width", 1.5)
-            .attr("stroke-dasharray", "5,5")
-            .attr("d", line)
-            .attr("class", "line min-temp")
-            .attr("data-legend", city + " min");
-    });
+        svg1_RENAME.selectAll(".line").remove();
+
+        dataByCity.forEach((values, city) => {
+            svg1_RENAME.append("path")
+                .datum(values)
+                .attr("fill", "none")
+                .attr("stroke", colorScale(city))
+                .attr("stroke-width", 1.5)
+                .attr("d", line)
+                .attr("class", "line")
+                .attr("data-legend", city + " " + tempType);
+        });
+    }
+
+    // Initial chart rendering
+    updateChart("max");
 
     // Add x-axis
     svg1_RENAME.append("g")
@@ -104,6 +101,13 @@ d3.csv("weather.csv").then(data => {
     svg1_RENAME.append("g")
         .call(d3.axisLeft(yScale));
 
+    // Add event listener to the dropdown menu
+    d3.select("#tempType").on("change", function() {
+        const selectedTempType = d3.select(this).property("value");
+        updateChart(selectedTempType);
+    });
+
+    
     const legend = svg1_RENAME.selectAll(".legend")
         .data(Array.from(maxDataByCity.keys()))
         .enter()
